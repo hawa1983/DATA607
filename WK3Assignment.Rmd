@@ -1,0 +1,172 @@
+---
+title: "practice"
+author: "Fomba Kassoh"
+date: "2023-09-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r libraries}
+library(tidyverse)
+library(dplyr)
+library(readr)
+library(babynames)
+```
+#1. Using the 173 majors listed in fivethirtyeight.com’s College Majors dataset [https://fivethirtyeight.com/features/the-economic-guide-to-picking-a-college-major/], provide code that identifies the majors that contain either "DATA" or "STATISTICS"
+
+The code below reads the college majors all_ages.csv file into the majors_data data frame. The next code selects the "Majors" column and and return the selected column as a vector.  The str_view function is the used to slect the majors with the words DATA or STATUSTICS using alternation. 
+
+##1.1 Load the college majors data into data frame and preview 
+```{r}
+majors_data <- read_csv("https://raw.githubusercontent.com/fivethirtyeight/data/master/college-majors/all-ages.csv")
+glimpse(majors_data)
+```
+## Select the Major column and return it as a vector
+
+```{r}
+majors <- majors_data |> 
+  select(Major) |> 
+  pull()
+head(majors, n=12)
+```
+## Identifies the majors that contain either "DATA" or "STATISTICS"
+
+```{r}
+str_view(majors, "DATA|STATISTICS")
+```
+
+```{r}
+# Define the original_data string
+original_data <- '[1] "bell pepper"  "bilberry"     "blackberry"   "blood orange"
+[5] "blueberry"    "cantaloupe"   "chili pepper" "cloudberry"  
+[9] "elderberry"   "lime"         "lychee"       "mulberry"    
+[13] "olive"        "salal berry"'
+
+# Extract the text within double quotes
+extracted_text <- str_extract_all(original_data, '"(.*?)"')[[1]]
+
+# Convert the extracted_text into an R vector
+vector_data <- as.vector(extracted_text)
+
+# Print the resulting vector
+str_view(vector_data)
+
+```
+#3 Describe, in words, what these expressions will match:
+
+## Description of (.)\1\1
+
+
+(.): Matches any single character and captures it in a group. The parentheses (.) create a capturing group that remembers the character it matches.
+
+\1: This is a backreference to the first capturing group (.). It matches whatever character was captured by the first group.
+
+\1: This is another backreference to the first capturing group (.). It again matches the same character that was captured by the first group.
+
+In simple terms, this regular expression is looking for three consecutive identical characters. It will match any sequence of three characters where all three characters are the same.
+
+```{r example of (.)\1\1}
+three_consecutive_words <- c("godessship", "skulllike", "headmistressship", "hostessship", "godess-ship", "skull-like", "headmistress-ship", "hostess-ship")
+str_view(three_consecutive_words, "(.)\\1\\1")
+```
+## Description of "(.)(.)\\2\\1"
+
+
+" Match a double quotation mark (").
+
+(.) Match any single character and capture it (this is the first captured group).
+
+(.) Match any single character and capture it (this is the second captured group).
+
+\\2  Match the same character that was captured in the second group (a backreference to the second captured group).
+
+\\1 Match the same character that was captured in the first group (a backreference to the first captured group).
+
+" Match a closing double quotation mark.
+
+In summary, this regex pattern matches a sequence of four characters enclosed in double quotation marks, where the first and fourth characters are the same, and the second and third characters are also the same. It essentially matches palindrome-like strings within double quotes, where the middle two characters are the same as the outer characters.
+
+```{r example of (.)(.)\\2\\1}
+sample <- c('"tattarrattat"', '"maddam"', '"racecar"')
+str_view(sample, "(.)(.)\\2\\1")
+```
+## Description of (..)\1
+
+(..): This part of the pattern consists of two consecutive dots inside parentheses. It is a capturing group that matches and remembers any two characters in the input string.
+
+\1: This is a backreference to the first capturing group (the two characters matched by (..)). It ensures that the same two characters that were captured by the first part of the pattern are repeated immediately after. In other words, it looks for a repetition of the exact same two characters that were found earlier in the string.
+
+This regex pattern is looking for sequences of exactly four characters where the first two characters are the same as the last two characters. 
+
+
+
+```{r}
+sample <- c('"tatatr"', '"madman"', '"racececar"')
+str_view(sample, "(..)\\1")
+```
+## Description of "(.).\1.\1"
+
+" - The pattern starts with a pair of double quotation marks, which are literal characters and must appear exactly as they are.
+
+(.) - This part of the pattern defines a capture group (Group 1) enclosed in parentheses. It captures any single character and stores it for later reference.
+
+Dot '.' - The dot (.) is a special character in regex that matches any single character except a newline.
+
+\1 - This part of the pattern is a backreference to Group 1, which means it will match the same character that was captured by Group 1 earlier in the pattern. It ensures that the same character is repeated here.
+
+Dot: '.' - Another dot, which again matches any single character except a newline.
+
+\1 - This is another backreference to Group 1, ensuring that the same character as captured by Group 1 is repeated once more.
+
+```{r example of "(.).\1.\1"}
+sample <- c('"tatatr"', '"ABACDC"', '"racececar"')
+str_view(sample,  '(.).\\1.\\1')
+```
+
+
+## Description of "(.)(.)(.).*\3\2\1"
+
+
+" The pattern starts by matching a double quotation mark (").
+
+(.)(.)(.): Inside the double quotes, it expects to find any three characters, and it captures each of them individually using parentheses. This means it captures three arbitrary characters in sequence.
+
+.* After capturing the first three characters, the pattern allows for zero or more arbitrary characters to appear (denoted by .*). This means it matches any characters (including none) between the initial three and the next part of the pattern.
+
+\\3\\2\\1: Finally, the pattern checks for a sequence of characters that corresponds to the reverse order of the first three captured characters. \3 refers to the third captured character, \2 refers to the second captured character, and \1 refers to the first captured character. So, this part checks for the same characters in reverse order as the initial capture.
+
+Overall, this regex pattern is designed to match strings that start and end with double quotation marks and have three arbitrary characters in between, where the last three characters must be the reverse of the first three characters.
+
+
+```{r example of "(.)(.)(.).*\3\2\1"}
+sample <- c('"tapstarpat"', '"ABACDC"', '"racececar"')
+str_view(sample,  '"(.)(.)(.).*\\3\\2\\1"')
+```
+
+#4 Construct regular expressions to match words that:
+- Start and end with the same character.
+
+
+
+```{r}
+sample <- c("podstardop",  "made", "noon", "june", "racecar", "bob")
+str_view(sample, "^(\\w)(\\w*)\\1$")
+```
+
+- Contain a repeated pair of letters (e.g. "church" contains "ch" repeated twice.)
+```{r}
+sample <- c("pop",  "made", "noon", "june", "arcecar", "church", "noonnoon", "indeeded")
+str_view(sample, "(\\w{2})(\\w*)\\1")
+```
+- Contain one letter repeated in at least three places (e.g. "eleven" contains three "e"s.)
+```{r}
+sample <- c("podorot",  "madadad", "noon", "june", "racecar", "church", "mississippi", "bookkeeper", "hello")
+str_view(sample, "\\w*(\\w)\\w*\\1\\w*\\1\\w*")
+```
+
+
+
