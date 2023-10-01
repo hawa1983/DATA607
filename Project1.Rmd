@@ -1,0 +1,134 @@
+---
+title: "Project 1"
+author: "Fomba Kassoh, Group member: Souleymane Doumbia"
+date: "2023-09-25"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Strategy
+Two lines of the text file will be used to extract the data needed. The first line with the player name has the "Player Name" and "Total Pts." The second line with "state" has the "state and pre_rtg that are required. The first line has the pair numbers for each of the pairs for each player. These numbers will be extracted and used as the index to get the pre_rtg for the pairs of each player. The pre_rtg's will be summed along each row and divided by the number of pairs to find the mean.
+
+## Load required libraries and read the text file
+The top 4 lines in the text file will be eliminated and every third line after that with dashes will be ignored.
+```{r}
+#Load the required library
+library(tidyverse)
+library(lubridate)
+# Read the text file into a character vector
+text_lines <- read_lines("Chess Tournament.txt")
+
+# Skip the first four lines
+text_lines <- tail(text_lines, -4)
+
+```
+# Create the initial data frame, df:
+
+we created an empty data frame, extracted the values needed, and added a row at a time.
+
+```{r}
+line_list = list()
+# Create an empty data frame. Data will be added to this data frame later
+df <- data.frame(player_no = character(0), name = character(0), state = character(0), score = character(0), current_rating = character(0), next_round_rating = character(0), pair_ids = list())
+
+# Loop through the text_lines vector three lines at a time
+for (i in seq(1, length(text_lines), by = 3)){
+ 
+ 
+    # Save the first two lines as input strings. Ignore the third line with the dashes
+    input_string1 <- text_lines[i]
+    input_string2 <- text_lines[i + 1]
+    
+    line_list <- append(line_list, str_flatten(c(input_string1, input_string2)))
+    
+    # Define regular expressions to extract the information
+    # Positive look behind and positive look ahead extension 
+    # notations were used to isolate the values need. In all but pre_rtg and post_rtg, these 
+    # notations are really not necessary since each value is the first occurrence of it's character type combination 
+    # and str_extract only extract the first occurrence.
+    
+    player_no <- str_extract(input_string1, r"((?<=\s{3})(\d+)(?=\s\|))") 
+    player_name <- str_extract(input_string1, r"((?<=\|\s)(\b[A-Z,\-,\s]+\b)(?=\s+\|\d+\.\d+\s+\|))") 
+    state <- str_extract(input_string2, r"((\b[A-Z]{2}\b))") 
+    rating <- str_extract(input_string1, r"((\b\d*\.\d*\b))") 
+    current_rating <- str_extract(input_string2, r"((?<=R:\s{0,5})\d{3,4})")
+    next_round_rating <- str_extract(input_string2, r"((?<=->\s{0,5})\d+)")
+    pair_ids <- unlist(str_extract_all(input_string1, "(?<=[A-Z]\\s{1,4})(\\d*)(?=\\|)"))
+      
+    # Add rows one at a time to df data frame.
+    new_row <- c(player_no, player_name, state, rating, current_rating, next_round_rating, pair_ids)
+    df <- rbind(df, new_row)
+
+}
+
+# Rename the columns of df
+names(df) <- c("id", "name", "state", "total_pts", "pre_rtg", "post_rtg", "pair_1", "pair_2", "pair_3", "pair_4", "pair_5", "pair_6", "pair_7")
+
+
+
+
+
+# Display the data frame
+options(kableExtra.latex.load_packages = FALSE)
+library(kableExtra)
+
+kable(df, longtable = T, booktabs = T, caption = "Chess Game Data Extraction") |>
+  kable_styling(latex_options = c("striped", "scale_down", "repeat_header")) |> 
+  row_spec(0, background = "grey") |> 
+  landscape()
+
+```
+
+# Replace the columns pair_1 to pair_7 with the pre_rtg value that match the values of the column
+
+In strategy 1, we substituted the values of 
+```{r columnwise}
+
+# Replace the values of each of the columns that start with pair_ with the pre_rtg value using the column value as the index to select the pre_rtg value. Also change their data type from character to numeric.
+# Change the data type of the columns 4 to 6.
+df <- df %>%
+   mutate_at(vars(starts_with("pair_")), ~ as.double(pre_rtg[as.integer(.)])
+             ) |> mutate_at(
+             vars(4:6), ~ as.double(.)
+             )
+
+options(kableExtra.latex.load_packages = FALSE)
+library(kableExtra)
+
+kable(df, longtable = T, booktabs = T, caption = "Chess Game Data Extraction") |>
+  kable_styling(latex_options = c("striped", "scale_down", "repeat_header")) |> 
+  row_spec(0, background = "grey") |> 
+  landscape()
+```
+
+# Calculate the average pre_rtg for each player
+Specify the range of columns whose values I want to average. Find the average of columns pair_1 to pair_7 across each row. Ignore columns with NA. Select and display the required columns
+
+```{r rowwise}
+
+df_final <- df |>
+  rowwise() |>
+  mutate(mean_rtg = round(mean(c_across(starts_with("pair_")), na.rm = TRUE))) |> 
+  select("Player Name" = name, 
+         "Player State" = state, 
+         "Total Points" = total_pts, 
+         "Pre-Rating" = pre_rtg, 
+         "Average Pre-Rating" = mean_rtg
+         )
+
+#write the dataframe to a csv file
+write_csv(df_final, "ratings.csv")
+
+options(kableExtra.latex.load_packages = FALSE)
+library(kableExtra)
+
+kable(df_final, longtable = T, booktabs = T, caption = "Chess Game Average Pre-game Rating") |>
+  kable_styling(latex_options = c("striped", "scale_down", "repeat_header")) |> 
+  row_spec(0, background = "grey") |> 
+  landscape()
+
+```
+
