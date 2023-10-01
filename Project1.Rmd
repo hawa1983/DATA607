@@ -84,11 +84,13 @@ kable(df, longtable = T, booktabs = T, caption = "Chess Game Data Extraction") |
 
 # Replace the columns pair_1 to pair_7 with the pre_rtg value that match the values of the column
 
-In strategy 1, we substituted the values of 
+Apply the mutate_at function column-wise for columns pair_1 to pair_7 to perform the following operations:
+- Replace the values of each of the columns that start with pair_ with the pre_rtg value using the column value as the index to   select the pre_rtg value. Also change their data type from character to numeric.
+- Change the data type of numeric columns.
+- Display the data.
 ```{r columnwise}
 
-# Replace the values of each of the columns that start with pair_ with the pre_rtg value using the column value as the index to select the pre_rtg value. Also change their data type from character to numeric.
-# Change the data type of the columns 4 to 6.
+
 df <- df %>%
    mutate_at(vars(starts_with("pair_")), ~ as.double(pre_rtg[as.integer(.)])
              ) |> mutate_at(
