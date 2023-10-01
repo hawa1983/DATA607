@@ -19,7 +19,7 @@ The top 4 lines in the text file will be eliminated and every third line after t
 library(tidyverse)
 library(lubridate)
 # Read the text file into a character vector
-text_lines <- read_lines("Chess Tournament.txt")
+text_lines <- read_lines("https://raw.githubusercontent.com/hawa1983/DATA607/main/Chess%20Tournament.txt")
 
 # Skip the first four lines
 text_lines <- tail(text_lines, -4)
