@@ -1,0 +1,130 @@
+---
+title: "Extra Credit: More JSON Practice"
+author: "Fomba Kassoh"
+date: "2023-11-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Questions
+1. What is the distribution of Nobel Laureates by continents and what is the gender distribution?
+2. Which country “lost” the most nobel laureates (who were born there but received their Nobel prize as    a citizen of a different country
+3. What categories were the nobel prices awarded and what is the average award by category?
+4. Why is the award amount so different from the adjusted award amount?
+
+# Load the libraries
+
+```{r}
+library(tidyverse)
+library(httr)
+library(jsonlite)
+
+```
+
+
+# Nobel Laureate data frame
+```{r}
+# Make the GET request
+response <- GET("https://api.nobelprize.org/2.1/laureates")
+
+# Check the status code to ensure the request was successful
+if (status_code(response) == 200) {
+  # Parse the JSON content
+  json_content <- content(response, "text")
+  json_data <- fromJSON(json_content)
+} else {
+  # Handle the case where the request was not successful
+  cat("The request was not successful. Status code:", status_code(response))
+}
+
+
+ # Convert the data to a data frame
+laureates_df <- as.data.frame(json_data$laureates)
+
+# flatten the nested JSON
+laureates_flat <- flatten(laureates_df)
+
+ # Convert the flattened data to a data frame
+laureates_df <- as.data.frame(laureates_flat)
+
+# Display the first few rows of the dataframe
+laureates_df
+```
+#1. What is the distribution of Nobel Laureates by continents and what is the gender distribution?
+
+***answer***
+Europe has the highest winners and there is only one female and is from Asia.
+
+```{r}
+laureates_df |> 
+  group_by(continent = birth.place.continent.en, gender) |>
+  count(gender) 
+
+```
+
+
+## 2. Which country “lost” the most nobel laureates (who were born there but received their Nobel prize       as a citizen of a different country
+
+***answer***
+Germany
+```{r}
+laureates_df |> 
+  group_by('country of birth' = birth.place.country.en, 'country of citizenship' = birth.place.countryNow.en) |>
+  summarise(n = n()) 
+
+```
+
+
+
+```{r}
+# Load required libraries
+library(httr)
+library(jsonlite)
+
+# Define the URL for the API endpoint
+url <- "https://api.nobelprize.org/2.1/nobelPrizes?_ga=2.205366736.1362337552.1699405563-668968112.1699405563"
+
+# Make the GET request to the API
+response <- GET(url)
+
+# Check if the request was successful
+if (status_code(response) == 200) {
+  # Parse the JSON content from the response
+  content <- content(response, "text")
+  json_data <- fromJSON(content)
+
+# Convert the data to a data frame
+nobelPrizes_df <- as.data.frame(json_data$nobelPrizes)
+
+# flatten the nested JSON
+nobelPrizes_flat <- flatten(nobelPrizes_df)
+
+ # Convert the flattened data to a data frame
+nobelPrizes_df <- as.data.frame(nobelPrizes_flat)
+
+# Display the first few rows of the dataframe
+nobelPrizes_df
+
+} else {
+  print(paste("Request failed with status", status_code(response)))
+}
+
+```
+
+#3. What categories were the nobel prices awarded and what is the average award by category?
+
+***answer***
+The award categories are shown below and the average award is the same.
+
+#4. What is the proportion of prize to adjusted prize. Why are the two so different?
+
+***answer***
+The proportion of prize to adjusted prize is about 1.58%. I do not know why they are so different.
+```{r}
+nobelPrizes_df |> 
+  group_by(category.en) |>
+  summarise('Average Award' = mean(prizeAmount), 'Award/Adjusted Award' = mean(prizeAmount)/mean(prizeAmountAdjusted))
+
+```
