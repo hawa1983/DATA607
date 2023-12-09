@@ -1,0 +1,94 @@
+---
+title: "Final Project"
+author: "Fomba Kassoh & Souleymane Doumbia"
+date: "2023-12-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load necessary libraries
+library(readr)
+library(tidyr)
+library(dplyr)
+library(stringr)
+
+# Load the dataset with specified column types
+audible_books <- read_csv("https://raw.githubusercontent.com/hawa1983/DATA607/main/audible_books.csv", 
+  col_types = cols(
+    title = col_character(),
+    subtitle = col_character(),
+    authors = col_character(),
+    narrators = col_character(),
+    series = col_character(),
+    length = col_character(),
+    release_date = col_character(),
+    language = col_character(),
+    rating = col_character(),
+    no_of_ratings = col_character(),
+    regular_price = col_character(),
+    sales_price = col_logical(),
+    category = col_logical(),
+    genres = col_character(),
+    url = col_character()
+))
+```
+
+# Data Tydying
+
+## Parsing and Cleaning 'authors', 'narrators', and 'genres' Fields
+These fields contain data in a list-like format (e.g., ['Meghan Quinn'], ['Connor Crais', 'Erin Mallon', 'Teddy Hamilton']). For easier analysis, these could be split into separate columns or transformed into a more consistent format.
+
+```{r}
+# Trim leading and trailing whitespaces
+audible_books$authors <- trimws(audible_books$authors)
+audible_books$narrators <- trimws(audible_books$narrators)
+
+# Define a function to clean and split the data
+clean_and_split <- function(column) {
+  # Remove brackets, different types of quotes, and trim again
+  cleaned_column <- gsub("[\\[\\]']", "", column)
+  cleaned_column <- trimws(cleaned_column)
+  
+  # Split the column into separate columns
+  separated_columns <- str_split_fixed(cleaned_column, ",\\s*", n = max(str_count(cleaned_column, ",") + 1))
+  
+  return(separated_columns)
+}
+
+# Apply the function to authors and narrators
+author_columns <- clean_and_split(audible_books$authors)
+narrator_columns <- clean_and_split(audible_books$narrators)
+
+# Convert the matrices to data frames
+author_df <- as.data.frame(author_columns, stringsAsFactors = FALSE)
+narrator_df <- as.data.frame(narrator_columns, stringsAsFactors = FALSE)
+
+# Add new columns to the original dataframe
+audible_books <- cbind(audible_books, author_df, narrator_df)
+
+# Optionally, rename the new columns for clarity
+colnames(audible_books)[(ncol(audible_books)-ncol(author_df)-ncol(narrator_df)+1):ncol(audible_books)] <- 
+    c(paste0("author_", seq_len(ncol(author_df))), paste0("narrator_", seq_len(ncol(narrator_df))))
+
+# View the modified dataframe
+head(audible_books)
+```
+
+## Extracting Numeric Data from 'length', 'rating', and 'no_of_ratings'
+
+
+## Handling Missing Data
+
+## Standardizing 'release_date' and 'language': 
+
+## Formatting Price Fields
+
+## Addressing Empty 'genres' Field
+
+## Consistency in Series Information
+
+## URLs Verification
