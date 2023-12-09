@@ -1,0 +1,227 @@
+---
+title: "Final Project"
+author: "Fomba Kassoh & Souleymane Doumbia"
+date: "2023-12-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load necessary libraries
+library(readr)
+library(tidyr)
+library(dplyr)
+library(stringr)
+
+# Load the dataset with specified column types
+audible_books <- read_csv("https://raw.githubusercontent.com/hawa1983/DATA607/main/audible_books.csv")
+
+glimpse(audible_books)
+```
+
+# Data Tydying
+
+## Parsing and Cleaning 'authors', 'narrators', and 'genres' Fields
+ parse and cleaning the 'authors' and 'narrators' fields using str_replace_all to remove unwanted characters and extract the necessary information.
+ 
+1. Cleans up the 'authors' and 'narrators' columns.
+2. Relocates the cleaned columns next to the originals.
+3. Drops the original 'authors' and 'narrators' columns.
+4. Renames the cleaned columns to 'authors' and 'narrators'.
+
+```{r}
+library(readr)
+library(tidyr)
+library(dplyr)
+library(stringr)
+
+# Clean 'authors' and 'narrators', relocate them, drop the original, and rename the cleaned columns
+audible_books <- audible_books %>%
+  mutate(
+    authors_cleaned = str_replace_all(authors, "\\['|'\\]", ""),
+    narrators_cleaned = str_replace_all(narrators, "\\['|'\\]", "")
+  ) %>%
+  relocate(authors_cleaned, .after = authors) %>%
+  relocate(narrators_cleaned, .after = narrators) %>%
+  select(-authors, -narrators) %>%
+  rename(
+    authors = authors_cleaned,
+    narrators = narrators_cleaned
+  )
+
+# Check the results
+head(audible_books)
+
+```
+
+## Extracting Numeric Data from 'length', 'rating', and 'no_of_ratings'
+extract the numeric data from the 'length', 'rating', and 'no_of_ratings' columns. We'll use str_extract to pull out the numbers, and for the 'rating', we'll also remove the 'out of 5 stars' text.
+```{r}
+# Load necessary libraries
+# Load necessary libraries
+library(readr)
+library(dplyr)
+library(stringr)
+
+# Use mutate to create new columns with the numeric data extracted and immediately drop the intermediate columns
+audible_books <- audible_books %>%
+  mutate(
+    length_hours = as.numeric(str_extract(length, "\\b\\d+\\b(?=\\s*hrs)")),
+    length_minutes = as.numeric(str_extract(length, "\\b\\d+\\b(?=\\s*mins)")),
+    total_length_minutes = (length_hours * 60) + ifelse(is.na(length_minutes), 0, length_minutes),
+    rating_numeric = as.numeric(str_extract(rating, "\\b\\d+(\\.\\d+)?\\b")),
+    no_of_ratings_numeric = as.numeric(str_extract(no_of_ratings, "\\b\\d+\\b"))
+  ) %>%
+  select(-length_hours, -length_minutes) %>%
+  relocate(total_length_minutes, .after = length) %>%
+  relocate(rating_numeric, .after = rating) %>%
+  relocate(no_of_ratings_numeric, .after = no_of_ratings)
+
+# Check the results
+head(audible_books)
+
+
+```
+
+
+## Handling Missing Data
+
+## Standardizing 'release_date' and 'language': 
+Extracts and converts the 'release_date' to a date format.
+Extracts the language name from the 'language' field.
+Relocates the standardized columns next to the originals.
+Drops the original 'release_date' and 'language' columns.
+Renames the standardized columns to 'release_date' and 'language'.
+```{r}
+# Load necessary libraries
+library(readr)
+library(dplyr)
+library(stringr)
+
+# Standardize 'release_date' and extract just the language name from 'language', rearrange them, drop the original, and rename
+audible_books <- audible_books %>%
+  mutate(
+    release_date_standardized = as.Date(str_extract(release_date, "\\d{2}-\\d{2}-\\d{2,4}"), format = "%m-%d-%y"),
+    language_standardized = str_replace(language, "Language: ", "")
+  ) %>%
+  relocate(release_date_standardized, .after = release_date) %>%
+  relocate(language_standardized, .after = language) %>%
+  select(-release_date, -language) %>%
+  rename(
+    release_date = release_date_standardized,
+    language = language_standardized
+  )
+
+# Check the results
+head(audible_books)
+
+```
+
+## Formatting Price Fields
+The regular_price_numeric and sales_price_numeric columns are created by extracting the numeric values from 'regular_price' and 'sales_price'.
+The sales_status column is determined based on whether sales_price_numeric is NA or not.
+The newly created columns are relocated next to their respective original columns.
+The original 'regular_price' and 'sales_price' columns are then removed from the dataframe.
+
+
+```{r}
+# Load necessary libraries
+library(readr)
+library(dplyr)
+library(stringr)
+
+
+# Process 'regular_price' and 'sales_price', create 'sales_status' column, rearrange, drop the original, and rename
+audible_books <- audible_books %>%
+  mutate(
+    regular_price_numeric = as.numeric(str_extract(regular_price, "\\d+\\.\\d+")),
+    sales_price_numeric = as.numeric(str_extract(sales_price, "\\d+\\.\\d+")),
+    sales_status = ifelse(is.na(sales_price_numeric), "not on sale", "on sale")
+  ) %>%
+  relocate(regular_price_numeric, .after = regular_price) %>%
+  relocate(sales_price_numeric, .after = sales_price) %>%
+  relocate(sales_status, .after = sales_price_numeric) %>%
+  select(-regular_price, -sales_price)
+
+# Check the results
+head(audible_books)
+
+```
+
+
+## Addressing Empty 'genres' Field
+
+## Consistency in Series Information
+
+## URLs Verification
+Checking URL Format
+
+```{r}
+library(stringr)
+library(dplyr)
+
+# Function to check if a URL is properly formatted
+is_valid_url <- function(url) {
+  # Basic pattern for a URL (this pattern can be enhanced to be more specific)
+  pattern <- "^http[s]?://.+"
+  return(str_detect(url, pattern))
+}
+
+# Apply the function to the URL column
+audible_books <- audible_books %>%
+  mutate(url_valid = sapply(url, is_valid_url))
+
+# Check the results
+head(audible_books)
+
+```
+
+**Checking URL Accessibility**
+To check if the URLs are accessible (i.e., they lead to an active web page), we used the httr package.
+
+```{r}
+library(rvest)
+library(httr)
+library(dplyr)
+library(readr) # For read_csv
+
+# Define a function to scrape reviews for a single URL using XPath
+scrape_reviews_xpath <- function(url) {
+  if (is.na(url) || url == "") {
+    return(NA)
+  }
+
+  # Handling errors
+  tryCatch({
+    # Sending a GET request to the URL with a user-agent
+    response <- httr::GET(url, user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"))
+    page <- read_html(response)
+
+    # Use XPath to select elements containing reviews
+    reviews <- page %>%
+      html_nodes(xpath = '//div[contains(@class, "bc-tab-set")]/a[contains(@class, "bc-tab-heading")]') %>%
+      html_text()
+
+    # Optional: Delay to respect the server and avoid being blocked (adjust as needed)
+    Sys.sleep(1)
+
+    return(reviews)
+  }, error = function(e) {
+    return(NA)
+  })
+}
+
+# Apply the function to each URL in your dataframe
+#audible_books$reviews <- sapply(audible_books$url, scrape_reviews_xpath, USE.NAMES = FALSE)
+
+# Check the results
+head(audible_books)
+
+
+```
+
+
+
